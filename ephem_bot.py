@@ -24,12 +24,63 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Regex
 
 import settings
 import smiles
+from cities import city_names
 
 logging.basicConfig(format='%(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO,
                     filename='bot.log'
 )
 
+def cities_create(user_data):
+    if user_data['first_letter'] is None:
+        get_cities = city_names.copy()
+        user_data['get_cities'] = get_cities
+
+def cities(bot, update, user_data):
+
+    city_from_user = update.message.text.replace('/cities','').replace(' ','')
+    if user_data['first_letter'] == city_from_user[0].lower() or user_data['first_letter'] == None:
+        for city in user_data['get_cities']:
+            if  city.lower() == city_from_user.lower() and city_from_user[-1].lower()!='ь':
+                user_data['first_letter'] = city_from_user[-1]
+                user_data['get_cities'].remove(city_from_user)
+                for city in user_data['get_cities']:
+                    if city[0].lower() == user_data['first_letter'] and city[-1].lower()!='ь':
+                        user_data['first_letter'] = city[-1]
+                        update.message.reply_text(f'{city}. Твоя очередь, введи город на букву {city[-1].capitalize()}')
+                        user_data['get_cities'].remove(city)
+                        break
+                    elif city[0].lower() == user_data['first_letter'] and city[-1].lower()=='ь':
+                        user_data['first_letter'] = city[-2]
+                        update.message.reply_text(f'{city}. Твоя очередь, введи город на букву {city[-2].capitalize()}')
+                        user_data['get_cities'].remove(city)
+                        break
+                else:
+                    user_data['first_letter'] = None
+                    update.message.reply_text('Ты выиграл!')
+                break
+            elif  city.lower() == city_from_user.lower() and city_from_user[-1].lower()=='ь':
+                user_data['first_letter'] = city_from_user[-2]
+                user_data['get_cities'].remove(city_from_user)
+                for city in user_data['get_cities']:
+                    if city[0].lower() == user_data['first_letter']and city[-1].lower()!='ь':
+                        user_data['first_letter'] = city[-1]
+                        update.message.reply_text(f'{city}. Твоя очередь, введи город на букву {city[-1].capitalize()}')
+                        user_data['get_cities'].remove(city)
+                        break
+                    elif city[0].lower() == user_data['first_letter'] and city[-1].lower()=='ь':
+                        user_data['first_letter'] = city[-2]
+                        update.message.reply_text(f'{city}. Твоя очередь, введи город на букву {city[-2].capitalize()}')
+                        user_data['get_cities'].remove(city)
+                        break
+                else:
+                    user_data['first_letter'] = None
+                    update.message.reply_text('Ты выиграл!')
+                break
+        else:
+            update.message.reply_text('Город не найден.')
+    else:
+        update.message.reply_text(f"Ты должен ввести город на букву {user_data['first_letter'].capitalize()}")
 
 def body(bot, update, user_data):
 
@@ -47,7 +98,10 @@ def body(bot, update, user_data):
 def greet_user(bot, update, user_data):
     emo = emojize(choice(smiles.smile), use_aliases = True)
     user_data['emo'] = emo
-    text = f'Привет {emo}'
+    first_letter = None
+    user_data['first_letter'] = first_letter
+    cities_create(user_data)
+    text = f'Привет {emo}. Если хочешь поиграть в города, набери /cities и название города! Например "/cities Нью-Йорк"'
     contacts_button = KeyboardButton('Прислать контакты', request_contact=True)
     location_button = KeyboardButton('Прислать геолокацию', request_location=True)
     my_keyboard = ReplyKeyboardMarkup(
@@ -71,6 +125,14 @@ def send_cat_picture(bot, update, user_data):
     rand = choice(source)
     bot.send_photo(chat_id = update.message.chat.id, photo = open(rand,'rb'))
 
+def get_contact(bot,update, user_data):
+    print(update.message.contact)
+    update.message.reply_text(f'Готово: {get_user_emo(user_data)}')
+
+def get_location(bot,update, user_data):
+    print(update.message.location)
+    update.message.reply_text(f'Готово: {get_user_emo(user_data)}')
+
 def change_avatar(bot, update, user_data):
     if 'emo' in user_data:
         del user_data['emo']
@@ -84,13 +146,7 @@ def get_user_emo(user_data):
         user_data['emo'] = emojize(choice(smiles.smile), use_aliases = True)
         return user_data['emo']
 
-def get_contact(bot,update,user_data):
-    print(update.message.contact)
-    update.message.reply_text(f'Готово: {emo}')
 
-def get_location(bot,update,user_data):
-    print(update.message.location)
-    update.message.reply_text(f'Готово: {emo}')
 
 def main():
     mybot = Updater(settings.API_KEY, request_kwargs=settings.PROXY)
@@ -98,6 +154,7 @@ def main():
     dp = mybot.dispatcher
     dp.add_handler(CommandHandler("start", greet_user, pass_user_data=True))
     dp.add_handler(CommandHandler("planet", body, pass_user_data=True))
+    dp.add_handler(CommandHandler("cities", cities, pass_user_data=True))
     dp.add_handler(RegexHandler('^(Прислать котика)$', send_cat_picture, pass_user_data=True))
     dp.add_handler(RegexHandler('^(Сменить аватарку)$', change_avatar, pass_user_data=True))
     dp.add_handler(CommandHandler("cat", send_cat_picture, pass_user_data=True))
