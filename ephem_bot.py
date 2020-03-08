@@ -38,19 +38,20 @@ def cities_create(user_data):
 
 def cities(bot, update, user_data):
 
-    city_from_user = update.message.text.replace('/cities','').replace(' ','')
-    if user_data['first_letter'] == city_from_user[0].lower() or user_data['first_letter'] == None:
+    print(update.message.text)
+    city_from_user = update.message.text.replace('/cities','').replace(' ','').lower()
+    if user_data['first_letter'] == city_from_user[0] or user_data['first_letter'] == None:
         for city in user_data['get_cities']:
-            if  city.lower() == city_from_user.lower() and city_from_user[-1].lower()!='ь':
+            if  city.lower() == city_from_user and city_from_user[-1]!='ь':
                 user_data['first_letter'] = city_from_user[-1]
-                user_data['get_cities'].remove(city_from_user)
+                user_data['get_cities'].remove(city)
                 for city in user_data['get_cities']:
-                    if city[0].lower() == user_data['first_letter'] and city[-1].lower()!='ь':
+                    if city[0].lower() == user_data['first_letter'] and city[-1]!='ь':
                         user_data['first_letter'] = city[-1]
                         update.message.reply_text(f'{city}. Твоя очередь, введи город на букву {city[-1].capitalize()}')
                         user_data['get_cities'].remove(city)
                         break
-                    elif city[0].lower() == user_data['first_letter'] and city[-1].lower()=='ь':
+                    elif city[0].lower() == user_data['first_letter'] and city[-1]=='ь':
                         user_data['first_letter'] = city[-2]
                         update.message.reply_text(f'{city}. Твоя очередь, введи город на букву {city[-2].capitalize()}')
                         user_data['get_cities'].remove(city)
@@ -59,16 +60,16 @@ def cities(bot, update, user_data):
                     user_data['first_letter'] = None
                     update.message.reply_text('Ты выиграл!')
                 break
-            elif  city.lower() == city_from_user.lower() and city_from_user[-1].lower()=='ь':
+            elif  city.lower() == city_from_user and city_from_user[-1]=='ь':
                 user_data['first_letter'] = city_from_user[-2]
-                user_data['get_cities'].remove(city_from_user)
+                user_data['get_cities'].remove(city)
                 for city in user_data['get_cities']:
-                    if city[0].lower() == user_data['first_letter']and city[-1].lower()!='ь':
+                    if city[0].lower() == user_data['first_letter']and city[-1]!='ь':
                         user_data['first_letter'] = city[-1]
                         update.message.reply_text(f'{city}. Твоя очередь, введи город на букву {city[-1].capitalize()}')
                         user_data['get_cities'].remove(city)
                         break
-                    elif city[0].lower() == user_data['first_letter'] and city[-1].lower()=='ь':
+                    elif city[0].lower() == user_data['first_letter'] and city[-1]=='ь':
                         user_data['first_letter'] = city[-2]
                         update.message.reply_text(f'{city}. Твоя очередь, введи город на букву {city[-2].capitalize()}')
                         user_data['get_cities'].remove(city)
